@@ -58,8 +58,7 @@ form{display:grid;gap:14px}.field{display:grid;gap:6px}.field label{font-size:13
  <div class="field"><label for="kgInput">全群共通・1頭あたり（kg）</label><input id="kgInput" type="number" min="0" step="0.1" value="20"></div>
  <div id="editCards"></div>
  <button class="btn" id="apply">今日の給餌画面に反映</button>
- <button class="btn secondary" id="reset">サンプル値に戻す</button>
- <p class="note">この試作品では、入力内容はこのブラウザ内で保持されます。従業員間の共有・ログイン機能はまだありません。</p>
+ <p class="note">入力内容はこの端末のブラウザに自動保存されます。従業員間の共有・ログイン機能はありません。ブラウザのデータ削除や別端末では引き継がれません。</p>
 </section>
 <section id="check" class="panel hidden">
  <h2>給餌作業の確認</h2>
@@ -76,9 +75,21 @@ const initial = [
  {name:"C群",heads:180,feed:175,color:"#fff0d5",text:"#8a5a08"},
  {name:"D群",heads:150,feed:140,color:"#eee6f8",text:"#67428c"}
 ];
-let herds = initial.map(x=>({...x}));
-let kg = 20;
-let checks = {};
+const STORAGE_KEY = "tamLuFeedManager.v02";
+function loadSaved(){
+ try { const raw=localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+ catch(e){ return null; }
+}
+const saved = loadSaved();
+let herds = Array.isArray(saved?.herds) && saved.herds.length===4
+ ? initial.map((g,i)=>({...g,heads:Math.max(0,Number(saved.herds[i]?.heads) || 0),feed:Math.max(0,Number(saved.herds[i]?.feed) || 0)}))
+ : initial.map(x=>({...x}));
+let kg = saved && Number.isFinite(Number(saved.kg)) ? Math.max(0,Number(saved.kg)) : 20;
+let checks = saved?.checks && typeof saved.checks === "object" ? saved.checks : {};
+function saveData(){
+ try { localStorage.setItem(STORAGE_KEY, JSON.stringify({herds:herds.map(g=>({heads:g.heads,feed:g.feed})),kg,checks})); }
+ catch(e){ console.warn("給餌設定を保存できませんでした",e); }
+}
 const $ = id => document.getElementById(id);
 const n = v => Math.max(0,Number(v)||0);
 const pct = (heads,feed) => n(heads)>0 ? n(feed)/n(heads)*100 : 0;
@@ -114,13 +125,25 @@ function render(){
 function switchTab(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("hidden",s.id!==id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));}
 document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.goto)));
-$("kgInput").addEventListener("input",e=>{kg=n(e.target.value);render()});
-$("editCards").addEventListener("input",e=>{const t=e.target;if(t.dataset.herd!==undefined){herds[Number(t.dataset.herd)][t.dataset.field]=n(t.value);render();switchTab("settings");}});
-$("apply").addEventListener("click",()=>{render();switchTab("today")});
-$("reset").addEventListener("click",()=>{herds=initial.map(x=>({...x}));kg=20;$("kgInput").value=20;render()});
+$("kgInput").value=kg;
+$("kgInput").addEventListener("input",e=>{kg=e.target.value===""?0:n(e.target.value);saveData();render()});
+$("editCards").addEventListener("input",e=>{
+ const t=e.target;
+ if(t.dataset.herd!==undefined){
+  const i=Number(t.dataset.herd), field=t.dataset.field;
+  // Update data without rebuilding the input elements, so focus stays in place.
+  herds[i][field]=t.value==="" ? 0 : n(t.value);
+  const card=t.closest(".group-edit");
+  const total=card.querySelector(".pair strong");
+  total.textContent=(n(herds[i].feed)*kg).toLocaleString("ja-JP")+" kg";
+  saveData();
+ }
+});
+$("apply").addEventListener("click",()=>{saveData();render();switchTab("today")});
 $("round").addEventListener("change",render);
-$("tasks").addEventListener("change",e=>{if(e.target.dataset.check){checks[$("round").value+e.target.dataset.check]=e.target.checked;render()}});
-$("clearChecks").addEventListener("click",()=>{Object.keys(checks).filter(k=>k.startsWith($("round").value)).forEach(k=>delete checks[k]);render()});
+$("tasks").addEventListener("change",e=>{if(e.target.dataset.check){checks[$("round").value+e.target.dataset.check]=e.target.checked;saveData();render()}});
+$("clearChecks").addEventListener("click",()=>{Object.keys(checks).filter(k=>k.startsWith($("round").value)).forEach(k=>delete checks[k]);saveData();render()});
+$("kgInput").value=kg;
 render();
 if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
 </script>

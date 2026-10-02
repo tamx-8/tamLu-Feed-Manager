@@ -1,4 +1,4 @@
-tamLu Feed Manager v0.1
+tamLu Feed Manager v0.2
 ========================
 
 Contents
@@ -23,8 +23,10 @@ Features
 - Gauge color: blue <= 90%, green > 90% and < 110%, red >= 110%
 - Gauge scale 0–130%, with 100% marker
 - Per-round task checklist
+- Automatically saves settings and checklist in this browser using localStorage
+- Removed the sample-value reset button
 
 Prototype limitations
 - No accounts or employee-to-employee cloud sync yet.
-- Inputs are in-memory and reset when the page is refreshed.
+- Saved data stays in this browser on this device; it does not sync between employees or devices. Clearing browser data may erase it.
 - Sample numbers are demo values; verify all amounts before operational use.
