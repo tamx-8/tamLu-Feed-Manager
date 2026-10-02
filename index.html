@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#183d2b">
+<title>tamLu Feed Manager</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--dark:#183d2b;--green:#21a366;--blue:#2788e8;--red:#e5484d;--bg:#eaf2eb;--muted:#55715c;--line:#d9e4da}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--dark);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:760px;margin:auto;padding:14px;display:grid;gap:14px}
+.hero{background:var(--dark);color:#fff;border-radius:22px;padding:22px;box-shadow:0 5px 18px #183d2b18}
+.brand{display:flex;align-items:center;gap:12px}.logo{background:#d6ebdd;border-radius:14px;padding:10px;font-size:28px}.brand h1{font-size:20px;margin:0 0 4px}.sub{font-size:11px;letter-spacing:.08em;color:#d6ebdd}
+hr{border:0;border-top:1px solid #496754;margin:18px 0}.hero .small{font-size:14px;color:#d6ebdd}.big{font-size:34px;font-weight:750;margin:6px 0 10px}.hero-foot{font-size:14px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}nav button{border:0;border-radius:15px;padding:13px 4px;background:#dce8dd;color:#24583a;font-size:13px;cursor:pointer}nav button.active{background:#fff;font-weight:700}nav .ico{display:block;font-size:22px;margin-bottom:5px}
+.panel{background:#fff;border-radius:22px;padding:18px;display:grid;gap:14px;box-shadow:0 4px 16px #183d2b0a}.panel h2{font-size:21px;margin:0}.common{background:#eef5ef;padding:16px;border-radius:15px}.muted{color:var(--muted);font-size:13px}.common strong{display:block;font-size:26px;margin-top:4px}
+.herd{border:1px solid var(--line);border-radius:17px;padding:15px;display:grid;gap:11px}.herd-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.herd-name{padding:8px 14px;border-radius:10px;font-weight:750}.herd-value{text-align:right}.kg{font-size:25px;font-weight:750}.pct{font-size:18px;font-weight:750;margin-top:2px}.pair{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}.pair strong{font-size:17px;white-space:nowrap}
+.gauge{height:14px;background:#e7ede8;border-radius:999px;position:relative;overflow:hidden;margin:1px 0 2px}.fill{height:100%;border-radius:999px;transition:width .18s ease}.mark{position:absolute;top:-3px;bottom:-3px;width:4px;left:calc(100% * 100 / 130);transform:translateX(-50%);background:var(--dark);border-left:1px solid #fff;border-right:1px solid #fff;z-index:2}
+.total{background:#eaf4eb;border-radius:17px;padding:17px;display:grid;gap:13px}.total h3{margin:0;font-size:20px}.total .gauge{height:16px;background:#d9e4da}.total .mark{background:var(--dark);border-color:#eaf4eb}
+.btn{border:0;background:var(--dark);color:white;border-radius:999px;padding:15px;font-size:15px;font-weight:650;cursor:pointer;width:100%}.btn.secondary{background:#eaf2eb;color:var(--dark);border:1px solid var(--line)}
+form{display:grid;gap:14px}.field{display:grid;gap:6px}.field label{font-size:13px;color:var(--muted)}input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:17px;color:var(--dark);background:#fff}
+.group-edit{border:1px solid var(--line);border-radius:15px;padding:14px;display:grid;gap:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.task{background:#f4f7f3;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.task label{display:flex;align-items:center;gap:12px;flex:1}.task input{width:22px;height:22px}.tag{font-size:12px;background:#d6ebdd;padding:5px 9px;border-radius:999px}.legend{display:flex;flex-wrap:wrap;gap:8px}.legend span{font-size:12px;padding:6px 9px;border-radius:999px;background:#f0f5f0}.note{font-size:12px;color:var(--muted);line-height:1.5}.hidden{display:none!important}
+@media(min-width:600px){.app{padding:24px}.hero{padding:26px}.panel{padding:24px}.herd{padding:18px}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="hero">
+ <div class="brand"><div class="logo">🌾</div><div><h1>tamLu Feed Manager</h1><div class="sub">DAILY FEED MANAGEMENT</div></div><span class="tag" style="margin-left:auto">v0.1</span></div>
+ <hr><div class="small">4群の合計給餌量</div><div class="big" id="heroKg">11,800 kg</div><div class="hero-foot" id="heroCounts">飼養 600 頭　·　給餌 590 頭</div>
+</header>
+<nav>
+ <button data-tab="today" class="active"><span class="ico">▤</span>今日の給餌</button>
+ <button data-tab="settings"><span class="ico">☷</span>設定変更</button>
+ <button data-tab="check"><span class="ico">☑</span>作業確認</button>
+</nav>
+<section id="today" class="panel">
+ <h2>群別 給餌量一覧 <span class="tag" style="float:right">4群</span></h2>
+ <div class="common"><span class="muted">全群共通・1頭あたり給餌量</span><strong id="commonKg">20 kg / 頭</strong></div>
+ <div id="herdCards"></div>
+ <div class="total">
+  <h3>4群合計</h3>
+  <div class="pair"><span class="muted">給餌頭数 / 飼養頭数</span><strong id="totalPair">590 / 600 頭</strong></div>
+  <div>
+   <div class="pair" style="margin-bottom:8px"><span>頭数比率</span><strong class="pct" id="totalPct">98%</strong></div>
+   <div class="gauge"><div class="fill" id="totalFill"></div><div class="mark"></div></div>
+  </div>
+  <hr style="border-color:#cddfd0;margin:0">
+  <div class="pair"><strong>合計給餌量</strong><strong class="kg" id="totalKg">11,800 kg</strong></div>
+ </div>
+ <div class="legend"><span>🔵 青：90%以下</span><span>🟢 緑：90%超〜110%未満</span><span>🔴 赤：110%以上</span></div>
+ <p class="note">ゲージは0〜130%。縦線は100%の目印です。数値は操作確認用のサンプルです。</p>
+ <button class="btn" data-goto="settings">給餌設定を変更する　→</button>
+</section>
+<section id="settings" class="panel hidden">
+ <h2>今日の給餌設定</h2>
+ <div class="field"><label for="kgInput">全群共通・1頭あたり（kg）</label><input id="kgInput" type="number" min="0" step="0.1" value="20"></div>
+ <div id="editCards"></div>
+ <button class="btn" id="apply">今日の給餌画面に反映</button>
+ <button class="btn secondary" id="reset">サンプル値に戻す</button>
+ <p class="note">この試作品では、入力内容はこのブラウザ内で保持されます。従業員間の共有・ログイン機能はまだありません。</p>
+</section>
+<section id="check" class="panel hidden">
+ <h2>給餌作業の確認</h2>
+ <div class="field"><label for="round">給餌回</label><select id="round" style="padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px"><option>1回目</option><option>2回目</option></select></div>
+ <div id="tasks"></div>
+ <button class="btn secondary" id="clearChecks">この回のチェックをリセット</button>
+</section>
+<footer class="note" style="text-align:center;padding:4px">tamLu Feed Manager · Prototype</footer>
+</main>
+<script>
+const initial = [
+ {name:"A群",heads:120,feed:108,color:"#e3f1e6",text:"#24583a"},
+ {name:"B群",heads:150,feed:145,color:"#e3eff5",text:"#24617b"},
+ {name:"C群",heads:180,feed:175,color:"#fff0d5",text:"#8a5a08"},
+ {name:"D群",heads:150,feed:140,color:"#eee6f8",text:"#67428c"}
+];
+let herds = initial.map(x=>({...x}));
+let kg = 20;
+let checks = {};
+const $ = id => document.getElementById(id);
+const n = v => Math.max(0,Number(v)||0);
+const pct = (heads,feed) => n(heads)>0 ? n(feed)/n(heads)*100 : 0;
+const color = p => p<=90 ? "#2788e8" : p>=110 ? "#e5484d" : "#21a366";
+const fmt = v => (Math.round(v*10)/10).toLocaleString("ja-JP");
+function gauge(p, extra=""){
+ const width=Math.min(100,Math.max(0,p/130*100));
+ return `<div class="gauge ${extra}"><div class="fill" style="width:${width}%;background:${color(p)}"></div><div class="mark"></div></div>`;
+}
+function render(){
+ const heads=herds.reduce((s,g)=>s+n(g.heads),0), feed=herds.reduce((s,g)=>s+n(g.feed),0);
+ const totalKg=herds.reduce((s,g)=>s+n(g.feed)*kg,0), totalP=pct(heads,feed);
+ $("heroKg").textContent=totalKg.toLocaleString("ja-JP")+" kg";
+ $("heroCounts").textContent=`飼養 ${heads} 頭　·　給餌 ${feed} 頭`;
+ $("commonKg").textContent=`${kg} kg / 頭`;
+ $("totalPair").textContent=`${feed} / ${heads} 頭`;
+ $("totalPct").textContent=heads>0?`${Math.round(totalP)}%`:"—";
+ $("totalPct").style.color=color(totalP);
+ $("totalFill").style.width=`${Math.min(100,Math.max(0,totalP/130*100))}%`;
+ $("totalFill").style.background=color(totalP);
+ $("totalKg").textContent=totalKg.toLocaleString("ja-JP")+" kg";
+ $("herdCards").innerHTML=herds.map((g,i)=>{
+  const p=pct(g.heads,g.feed);
+  return `<article class="herd">
+   <div class="herd-top"><div class="herd-name" style="background:${g.color};color:${g.text}">${g.name}</div><div class="herd-value"><div class="kg">${(n(g.feed)*kg).toLocaleString("ja-JP")} kg</div><div class="pct" style="color:${color(p)}">${n(g.heads)>0?Math.round(p)+"%":"—"}</div></div></div>
+   <div class="pair"><span class="muted">給餌頭数 / 飼養頭数</span><strong>${n(g.feed)} / ${n(g.heads)} 頭</strong></div>
+   ${gauge(p)}
+  </article>`;
+ }).join("");
+ $("editCards").innerHTML=herds.map((g,i)=>`<div class="group-edit"><strong>${g.name}</strong><div class="two"><div class="field"><label>飼養頭数</label><input type="number" min="0" step="1" data-herd="${i}" data-field="heads" value="${g.heads}"></div><div class="field"><label>給餌頭数</label><input type="number" min="0" step="1" data-herd="${i}" data-field="feed" value="${g.feed}"></div></div><div class="pair"><span class="muted">合計給餌量</span><strong>${(n(g.feed)*kg).toLocaleString("ja-JP")} kg</strong></div></div>`).join("");
+ $("tasks").innerHTML=["C群","D群","B群","A群"].map(name=>`<div class="task"><label><input type="checkbox" data-check="${name}" ${checks[$("round").value+name]?"checked":""}><span><strong>${name}</strong><br><span class="muted">${(n(herds.find(g=>g.name===name)?.feed)*kg).toLocaleString("ja-JP")} kg</span></span></label><span class="tag">${checks[$("round").value+name]?"完了":"未確認"}</span></div>`).join("");
+}
+function switchTab(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("hidden",s.id!==id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));}
+document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.goto)));
+$("kgInput").addEventListener("input",e=>{kg=n(e.target.value);render()});
+$("editCards").addEventListener("input",e=>{const t=e.target;if(t.dataset.herd!==undefined){herds[Number(t.dataset.herd)][t.dataset.field]=n(t.value);render();switchTab("settings");}});
+$("apply").addEventListener("click",()=>{render();switchTab("today")});
+$("reset").addEventListener("click",()=>{herds=initial.map(x=>({...x}));kg=20;$("kgInput").value=20;render()});
+$("round").addEventListener("change",render);
+$("tasks").addEventListener("change",e=>{if(e.target.dataset.check){checks[$("round").value+e.target.dataset.check]=e.target.checked;render()}});
+$("clearChecks").addEventListener("click",()=>{Object.keys(checks).filter(k=>k.startsWith($("round").value)).forEach(k=>delete checks[k]);render()});
+render();
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body>
+</html>

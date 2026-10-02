@@ -1,0 +1,9 @@
+{
+  "name": "tamLu Feed Manager",
+  "short_name": "Feed Manager",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eaf2eb",
+  "theme_color": "#183d2b",
+  "lang": "ja"
+}
