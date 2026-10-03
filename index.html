@@ -20,20 +20,20 @@ nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}nav button{border:0
 .total{background:#eaf4eb;border-radius:17px;padding:17px;display:grid;gap:13px}.total h3{margin:0;font-size:20px}.total .gauge{height:16px;background:#d9e4da}.total .mark{background:var(--dark);border-color:#eaf4eb}
 .btn{border:0;background:var(--dark);color:white;border-radius:999px;padding:15px;font-size:15px;font-weight:650;cursor:pointer;width:100%}.btn.secondary{background:#eaf2eb;color:var(--dark);border:1px solid var(--line)}
 form{display:grid;gap:14px}.field{display:grid;gap:6px}.field label{font-size:13px;color:var(--muted)}input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:17px;color:var(--dark);background:#fff}
-.group-edit{border:1px solid var(--line);border-radius:15px;padding:14px;display:grid;gap:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.task{background:#f4f7f3;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.task label{display:flex;align-items:center;gap:12px;flex:1}.task input{width:22px;height:22px}.tag{font-size:12px;background:#d6ebdd;padding:5px 9px;border-radius:999px}.legend{display:flex;flex-wrap:wrap;gap:8px}.legend span{font-size:12px;padding:6px 9px;border-radius:999px;background:#f0f5f0}.note{font-size:12px;color:var(--muted);line-height:1.5}.hidden{display:none!important}
+.group-edit{border:1px solid var(--line);border-radius:15px;padding:14px;display:grid;gap:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.task{background:#f4f7f3;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.task label{display:flex;align-items:center;gap:12px;flex:1}.task input{width:22px;height:22px}.tag{font-size:12px;background:#d6ebdd;padding:5px 9px;border-radius:999px}.legend{display:flex;flex-wrap:wrap;gap:8px}.legend span{font-size:12px;padding:6px 9px;border-radius:999px;background:#f0f5f0}.note{font-size:12px;color:var(--muted);line-height:1.5}.mixer-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px}.mixer-row .herd-name{justify-self:start}.mixer-amount{font-size:14px;color:var(--muted);white-space:nowrap}.mixer-remaining{text-align:right;font-size:25px;font-weight:800;white-space:nowrap;min-width:94px}.order-buttons{display:flex;gap:5px}.order-btn{border:1px solid var(--line);background:#f4f8f4;color:var(--dark);border-radius:9px;width:36px;height:36px;font-size:20px;font-weight:800;cursor:pointer}.order-btn:disabled{opacity:.3;cursor:default}.hidden{display:none!important}
 @media(min-width:600px){.app{padding:24px}.hero{padding:26px}.panel{padding:24px}.herd{padding:18px}}
 </style>
 </head>
 <body>
 <main class="app">
 <header class="hero">
- <div class="brand"><div class="logo">🌾</div><div><h1>tamLu Feed Manager</h1><div class="sub">DAILY FEED MANAGEMENT</div></div><span class="tag" style="margin-left:auto">v0.1</span></div>
+ <div class="brand"><div class="logo">🌾</div><div><h1>tamLu Feed Manager</h1><div class="sub">DAILY FEED MANAGEMENT</div></div><span class="tag" style="margin-left:auto">v0.5</span></div>
  <hr><div class="small">4群の合計給餌量</div><div class="big" id="heroKg">11,800 kg</div><div class="hero-foot" id="heroCounts">飼養 600 頭　·　給餌 590 頭</div>
 </header>
 <nav>
  <button data-tab="today" class="active"><span class="ico">▤</span>今日の給餌</button>
  <button data-tab="settings"><span class="ico">☷</span>設定変更</button>
- <button data-tab="check"><span class="ico">☑</span>作業確認</button>
+ <button data-tab="mixer"><span class="ico">⚙</span>ミキサー</button>
 </nav>
 <section id="today" class="panel">
  <h2>群別 給餌量一覧 <span class="tag" style="float:right">4群</span></h2>
@@ -60,11 +60,17 @@ form{display:grid;gap:14px}.field{display:grid;gap:6px}.field label{font-size:13
  <button class="btn" id="apply">今日の給餌画面に反映</button>
  <p class="note">入力内容はこの端末のブラウザに自動保存されます。従業員間の共有・ログイン機能はありません。ブラウザのデータ削除や別端末では引き継がれません。</p>
 </section>
-<section id="check" class="panel hidden">
- <h2>給餌作業の確認</h2>
- <div class="field"><label for="round">給餌回</label><select id="round" style="padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px"><option>1回目</option><option>2回目</option></select></div>
- <div id="tasks"></div>
- <button class="btn secondary" id="clearChecks">この回のチェックをリセット</button>
+<section id="mixer" class="panel hidden">
+ <h2>ミキサー</h2>
+ <p class="note">今日の給餌設定をもとに、各群の給餌量を3回に分けて表示します。1・2回目は同じ量、3回目で残量を調整します。</p>
+ <div class="two">
+  <button class="btn" id="round12" aria-pressed="true">1,2回目</button>
+  <button class="btn secondary" id="round3" aria-pressed="false">3回目</button>
+ </div>
+ <div class="common"><span class="muted" id="mixerLabel">1回目・2回目の給餌量</span><strong id="mixerTotal">0 kg</strong></div>
+ <div id="mixerCards"></div>
+ <p class="note">1・2回目の量は、1日必要量の約3分の1に近い500kg単位で自動調整します。3回目は1日必要量との差分です。3回分の合計は各群の1日必要量と一致します。</p>
+ <button class="btn secondary" data-goto="settings">給餌設定を変更する</button>
 </section>
 <footer class="note" style="text-align:center;padding:4px">tamLu Feed Manager · Prototype</footer>
 </main>
@@ -76,11 +82,13 @@ const initial = [
  {name:"D群",heads:150,feed:140,color:"#eee6f8",text:"#67428c"}
 ];
 const STORAGE_KEY = "tamLuFeedManager.v02";
+const ORDER_KEY = "tamLuFeedMixerOrder.v05";
 function loadSaved(){
  try { const raw=localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
  catch(e){ return null; }
 }
 const saved = loadSaved();
+let herdOrder = (()=>{try{const v=JSON.parse(localStorage.getItem(ORDER_KEY));return Array.isArray(v)&&v.length===4&&[0,1,2,3].every(i=>v.includes(i))?v:[2,3,1,0]}catch(e){return [2,3,1,0]}})();
 let herds = Array.isArray(saved?.herds) && saved.herds.length===4
  ? initial.map((g,i)=>({...g,heads:Math.max(0,Number(saved.herds[i]?.heads) || 0),feed:Math.max(0,Number(saved.herds[i]?.feed) || 0)}))
  : initial.map(x=>({...x}));
@@ -120,7 +128,30 @@ function render(){
   </article>`;
  }).join("");
  $("editCards").innerHTML=herds.map((g,i)=>`<div class="group-edit"><strong>${g.name}</strong><div class="two"><div class="field"><label>飼養頭数</label><input type="number" min="0" step="1" data-herd="${i}" data-field="heads" value="${g.heads}"></div><div class="field"><label>給餌頭数</label><input type="number" min="0" step="1" data-herd="${i}" data-field="feed" value="${g.feed}"></div></div><div class="pair"><span class="muted">合計給餌量</span><strong>${(n(g.feed)*kg).toLocaleString("ja-JP")} kg</strong></div></div>`).join("");
- $("tasks").innerHTML=["C群","D群","B群","A群"].map(name=>`<div class="task"><label><input type="checkbox" data-check="${name}" ${checks[$("round").value+name]?"checked":""}><span><strong>${name}</strong><br><span class="muted">${(n(herds.find(g=>g.name===name)?.feed)*kg).toLocaleString("ja-JP")} kg</span></span></label><span class="tag">${checks[$("round").value+name]?"完了":"未確認"}</span></div>`).join("");
+ const mixerRound=window.mixerRound || "12";
+ const mixerRows=herdOrder.map(i=>({...herds[i],originalIndex:i})).map(g=>{
+  const daily=Math.round(n(g.feed)*kg);
+  const maxBase=Math.floor((daily/2)/500)*500;
+  const base=Math.max(0,Math.min(maxBase,Math.round((daily/3)/500)*500));
+  const amount=mixerRound==="12"?base:daily-base*2;
+  return {name:g.name,daily,amount,color:g.color,text:g.text};
+ });
+ $("mixerLabel").textContent=mixerRound==="12"?"1回目・2回目の給餌量（各回同量）":"3回目の給餌量（残量調整）";
+ $("mixerTotal").textContent=mixerRows.reduce((sum,g)=>sum+g.amount,0).toLocaleString("ja-JP")+" kg";
+ let remaining=mixerRows.reduce((sum,g)=>sum+g.amount,0);
+ $("mixerCards").innerHTML=mixerRows.map((g,pos)=>{
+  const after=remaining;
+  remaining-=g.amount;
+  return `<div class="herd"><div class="mixer-row"><div><div class="herd-name" style="background:${g.color};color:${g.text}">${g.name}</div><div class="order-buttons" style="margin-top:8px"><button class="order-btn" data-move="up" data-index="${g.originalIndex}" aria-label="${g.name}を上へ" ${pos===0?"disabled":""}>▲</button><button class="order-btn" data-move="down" data-index="${g.originalIndex}" aria-label="${g.name}を下へ" ${pos===mixerRows.length-1?"disabled":""}>▼</button></div></div><div class="mixer-amount">${g.amount.toLocaleString("ja-JP")} kg</div><div class="mixer-remaining">${after.toLocaleString("ja-JP")} kg</div></div><div class="pair"><span class="muted">1日必要量</span><strong>${g.daily.toLocaleString("ja-JP")} kg</strong></div></div>`;
+ }).join("");
+ $("mixerCards").querySelectorAll("[data-move]").forEach(btn=>btn.addEventListener("click",()=>{
+  const index=Number(btn.dataset.index), at=herdOrder.indexOf(index), next=btn.dataset.move==="up"?at-1:at+1;
+  if(next<0||next>=herdOrder.length)return;
+  [herdOrder[at],herdOrder[next]]=[herdOrder[next],herdOrder[at]];
+  try{localStorage.setItem(ORDER_KEY,JSON.stringify(herdOrder));}catch(e){}
+  render();
+ }));
+
 }
 function switchTab(id){document.querySelectorAll("section").forEach(s=>s.classList.toggle("hidden",s.id!==id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));}
 document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
@@ -140,9 +171,10 @@ $("editCards").addEventListener("input",e=>{
  }
 });
 $("apply").addEventListener("click",()=>{saveData();render();switchTab("today")});
-$("round").addEventListener("change",render);
-$("tasks").addEventListener("change",e=>{if(e.target.dataset.check){checks[$("round").value+e.target.dataset.check]=e.target.checked;saveData();render()}});
-$("clearChecks").addEventListener("click",()=>{Object.keys(checks).filter(k=>k.startsWith($("round").value)).forEach(k=>delete checks[k]);saveData();render()});
+window.mixerRound="12";
+function setMixerRound(round){window.mixerRound=round;$("round12").classList.toggle("secondary",round!=="12");$("round3").classList.toggle("secondary",round!=="3");$("round12").setAttribute("aria-pressed",String(round==="12"));$("round3").setAttribute("aria-pressed",String(round==="3"));render();}
+$("round12").addEventListener("click",()=>setMixerRound("12"));
+$("round3").addEventListener("click",()=>setMixerRound("3"));
 $("kgInput").value=kg;
 render();
 if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
